@@ -29,7 +29,7 @@
 
 import unittest
 
-from dash_test_util import *
+from .dash_test_util import *
 from dashlivesim.dashlib import dash_proxy
 from dashlivesim.dashlib import mpdprocessor
 import xml.etree.ElementTree as ET
@@ -60,7 +60,7 @@ class TestXlinkPeriod(unittest.TestCase):
             # This array would contain all the period id that have duration attributes.
             # In the following, we will check if the correct period element have been assigned duration attributes.
             for child in xml.findall('{urn:mpeg:dash:schema:mpd:2011}Period'): # Collect all period elements first
-                if child.attrib.has_key('duration'): # If the period element has the duration attribute.
+                if 'duration' in child.attrib: # If the period element has the duration attribute.
                     periods_containing_duration_attribute.append(child.attrib['id'])
                     # Then collect its period id in this array
             one_etp_for_how_many_periods = nr_period_per_hour/nr_etp_periods_per_hour

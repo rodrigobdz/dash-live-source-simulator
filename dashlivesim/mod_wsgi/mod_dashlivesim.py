@@ -33,7 +33,7 @@
 # For Apache mod_wsgi, this is done using setEnv
 
 from dashlivesim import SERVER_AGENT
-import httplib
+import http.client
 from os.path import splitext
 from time import time
 from dashlivesim.dashlib import dash_proxy
@@ -42,7 +42,7 @@ from dashlivesim.dashlib import dash_proxy
 #pylint: disable=dangerous-default-value
 def reply(code, resp, body='', headers={}):
     "Create reply."
-    status = str(code) + ' ' + httplib.responses[code]
+    status = str(code) + ' ' + http.client.responses[code]
 
     # Add default headers to all requests
     headers['Accept-Ranges'] = 'bytes'
@@ -60,7 +60,7 @@ def reply(code, resp, body='', headers={}):
         if not 'Content-Type' in headers:
             headers['Content-Type'] = 'text/plain'
 
-    resp(status, headers.items())
+    resp(status, list(headers.items()))
     return [body]
 
 #pylint: disable=too-many-branches, too-many-locals
@@ -90,13 +90,13 @@ def application(environment, start_response):
 
     success = True
     mimetype = get_mime_type(ext)
-    status = httplib.OK
+    status = http.client.OK
     payload_in = None
 
     try:
         response = dash_proxy.handle_request(hostname, path_parts[1:], args, vod_conf_dir, content_root, now, None,
                                              is_https)
-        if isinstance(response, basestring):
+        if isinstance(response, str):
             payload_in = response
             if not payload_in:
                 success = False
@@ -107,21 +107,21 @@ def application(environment, start_response):
             payload_in = response['pl']
 
     #pylint: disable=broad-except
-    except Exception, exc:
+    except Exception as exc:
         success = False
-        print "mod_dash_handler request error: %s" % exc
+        print("mod_dash_handler request error: %s" % exc)
         payload_in = "DASH Proxy Error: %s\n URL=%s" % (exc, url)
 
 
     if not success:
         if payload_in == "":
-            print "dash_proxy error: No body!"
+            print("dash_proxy error: No body!")
             payload_in = "Now found (now)"
         elif payload_in is None:
-            print "dash_proxy: No content found"
+            print("dash_proxy: No content found")
             payload_in = "Not found (now)"
 
-        status = httplib.NOT_FOUND
+        status = http.client.NOT_FOUND
         mimetype = "text/plain"
 
     payload_out = payload_in
@@ -129,14 +129,14 @@ def application(environment, start_response):
     # Setup response headers
     headers = {'Content-Type':mimetype}
 
-    if status != httplib.NOT_FOUND:
+    if status != http.client.NOT_FOUND:
         if range_line:
             payload_out, range_out = handle_byte_range(payload_in, range_line)
             if range_out != "": # OK
                 headers['Content-Range'] = range_out
-                status = httplib.PARTIAL_CONTENT
+                status = http.client.PARTIAL_CONTENT
             else: # Bad range, drop it
-                print "mod_dash_handler: Bad range %s" % (range_line)
+                print("mod_dash_handler: Bad range %s" % (range_line))
 
     return reply(status, start_response, payload_out, headers)
 
@@ -210,7 +210,7 @@ def main():
     def run_local_webserver(wrapper, host, port):
         "Local webserver."
         from wsgiref.simple_server import make_server
-        print 'Waiting for requests at "{0}:{1}"'.format(host, port)
+        print('Waiting for requests at "{0}:{1}"'.format(host, port))
         httpd = make_server(host, port, wrapper)
         httpd.serve_forever()
 

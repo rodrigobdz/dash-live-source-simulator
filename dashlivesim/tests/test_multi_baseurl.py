@@ -1,6 +1,6 @@
 import unittest
 
-from dash_test_util import *
+from .dash_test_util import *
 from dashlivesim.dashlib import dash_proxy
 from dashlivesim.dashlib import mpdprocessor
 

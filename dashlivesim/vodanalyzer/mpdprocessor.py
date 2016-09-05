@@ -30,7 +30,7 @@
 #  POSSIBILITY OF SUCH DAMAGE.
 
 from xml.etree import ElementTree
-import cStringIO
+import io
 import re
 
 from ..dashlib import timeformatconversions as tfc
@@ -74,15 +74,15 @@ class MpdElement(object):
     def check_and_add_attributes(self, node, attribs):
         "Check if node has attributes and add them to self.attribs."
         for attr in attribs:
-            if node.attrib.has_key(attr):
+            if attr in node.attrib:
                 self.attribs[attr] = node.attrib[attr]
             else:
-                if not self.attribs.has_key(attr):
+                if attr not in self.attribs:
                     self.attribs[attr] = None
 
     def set_value(self, element, key, data):
         "Set attribute key of element to value data[key], if present."
-        if data.has_key(key):
+        if key in data:
             element.set(key, str(data[key]))
 
 
@@ -245,10 +245,10 @@ class MpdProcessor(MpdElement):
         mpd = self.root
         tag, self.mpd_namespace = self.tag_and_namespace(mpd.tag)
         assert tag == "MPD"
-        if mpd.attrib.has_key('mediaPresentationDuration'):
+        if 'mediaPresentationDuration' in mpd.attrib:
             self.media_presentation_duration = mpd.attrib['mediaPresentationDuration']
             self.media_presentation_duration_in_s = tfc.iso_duration_to_seconds(self.media_presentation_duration)
-            print "Found mediaPresentationDuration = %ds" % self.media_presentation_duration_in_s
+            print("Found mediaPresentationDuration = %ds" % self.media_presentation_duration_in_s)
         for child in mpd:
             if self.compare_tag(child.tag, 'Period'):
                 for grand_child in child:
@@ -267,7 +267,7 @@ class MpdProcessor(MpdElement):
         initPath = None
         for AS in self.adaptation_sets:
             if AS.contentType == "video":
-                print AS.initialization
+                print(AS.initialization)
                 initPath = AS.initialization.replace("$RepresentationID$", self.muxed_rep)
         return initPath
 
@@ -288,9 +288,9 @@ class MpdProcessor(MpdElement):
         Typical keys are: availabilityStartTime, timeShiftBufferDepth, minimumUpdatePeriod."""
         MPD = self.root
         MPD.set('type', "dynamic")
-        for key in data.keys():
+        for key in list(data.keys()):
             self.setValue(MPD, key, data)
-        if MPD.attrib.has_key('mediaPresentationDuration'):
+        if 'mediaPresentationDuration' in MPD.attrib:
             del MPD.attrib['mediaPresentationDuration']
         for child in MPD:
             if self.compare_tag(child.tag, 'Period'):
@@ -316,7 +316,7 @@ class MpdProcessor(MpdElement):
                         elif AS.contentType == "video":
                             videoAS = grandChild
 
-        for contentType, mData in mediaData.items():
+        for contentType, mData in list(mediaData.items()):
             trackID = mData['trackID']
             cc = self.makeContentComponent(contentType, trackID)
             videoAS.insert(0, cc)
@@ -331,7 +331,7 @@ class MpdProcessor(MpdElement):
             combinedCodecs = "%s,%s" % (audioCodec, videoCodec)
             videoRep.set("codecs", combinedCodecs)
         except KeyError:
-            print "Could not combine codecs"
+            print("Could not combine codecs")
         period.remove(audioAS)
 
     def makeContentComponent(self, contentType, trackID):
@@ -344,7 +344,7 @@ class MpdProcessor(MpdElement):
 
     def getCleanString(self, clean=True, targetMpdNameSpace=None):
         "Get a string of all XML cleaned (no ns0 namespace)"
-        ofh = cStringIO.StringIO()
+        ofh = io.StringIO()
         self.tree.write(ofh, encoding="utf-8")#, default_namespace=NAMESPACE)
         value = ofh.getvalue()
         if clean:

@@ -31,7 +31,7 @@ import unittest
 
 from dashlivesim.dashlib import dash_proxy
 
-from dash_test_util import *
+from .dash_test_util import *
 
 class TestMpdChange(unittest.TestCase):
     "Test that MPD gets startNr changed in an appropriate way"

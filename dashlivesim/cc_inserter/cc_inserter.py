@@ -159,8 +159,8 @@ class CCInsertFilter(MP4Filter):
             if len(scc_samples):
                 #print " ", i, "SampleTime: " + str((sample_time_tfdt + comp_time) / float(self.time_scale)),
                 #      "num samples to add: ", len(scc_samples)
-                print " ", i, "SampleTime: " + str((sample_time_tfdt) / float(self.time_scale)), \
-                      "num samples to add: ", len(scc_samples)
+                print(" ", i, "SampleTime: " + str((sample_time_tfdt) / float(self.time_scale)), \
+                      "num samples to add: ", len(scc_samples))
                 scc_generated_data = generate_data(scc_samples)
                 self.scc_map.append({'pos':orig_sample_pos, 'scc':scc_generated_data, 'len': len(scc_generated_data)})
                 #print size, size+len(scc_generated_data)
@@ -267,7 +267,7 @@ def convert_time(tim):
 
 def chunks(data, num):
     """Yield successive n-sized chunks from l."""
-    for i in xrange(0, len(data), num):
+    for i in range(0, len(data), num):
         yield data[i:i+num]
 
 class CCInserterError(Exception):
@@ -291,7 +291,7 @@ def get_segment_range(rep_data):
     for i in range(1, len(numbers)):
         if numbers[i] != numbers[i-1] + 1:
             raise CCInserterError("%s segment missing between %d and %d" % rep_id, numbers[i], numbers[i-1])
-    print "Found %s segments %d - %d" % (rep_id, numbers[0], numbers[-1])
+    print("Found %s segments %d - %d" % (rep_id, numbers[0], numbers[-1]))
     rep_data['firstNumber'] = numbers[0]
     rep_data['lastNumber'] = numbers[-1]
 
@@ -338,9 +338,9 @@ class CCInserter(object):
         for adaptation_set in self.mpd_processor.get_adaptation_sets():
             content_type = adaptation_set.content_type
             if content_type is None:
-                print "No contentType for adaptation set"
+                print("No contentType for adaptation set")
                 sys.exit(1)
-            if self.as_data.has_key(content_type):
+            if content_type in self.as_data:
                 raise CCInserterError("Multiple adaptation sets for contentType " + content_type)
             as_data = {'as' : adaptation_set, 'reps' : []}
             as_data['presentationDurationInS'] = self.mpd_processor.media_presentation_duration_in_s
@@ -354,13 +354,13 @@ class CCInserter(object):
                 init_filter = initsegmentfilter.InitFilter(rep_data['absInitPath'])
                 init_filter.filter()
                 rep_data['trackID'] = init_filter.track_id
-                print "%s trackID = %d" % (content_type, rep_data['trackID'])
+                print("%s trackID = %d" % (content_type, rep_data['trackID']))
                 rep_data['relMediaPath'] = rep.get_media_path()
                 rep_data['absMediaPath'] = os.path.join(self.base_path, rep.get_media_path())
 
                 get_segment_range(rep_data)
                 track_timescale = init_filter.track_timescale
-                if not as_data.has_key('track_timescale'):
+                if 'track_timescale' not in as_data:
                     as_data['track_timescale'] = track_timescale
                 elif track_timescale != as_data['track_timescale']:
                     raise CCInserterError("Timescales not consistent between %s tracks" % content_type)
@@ -382,13 +382,13 @@ class CCInserter(object):
         # pylint: disable=too-many-locals,too-many-branches,too-many-statements
         #lastGoodSegments = []
         seg_duration = None
-        print "Checking all the media segment durations for deviations."
+        print("Checking all the media segment durations for deviations.")
 
-        for content_type in self.as_data.keys():
+        for content_type in list(self.as_data.keys()):
             if content_type == "video":
                 as_data = self.as_data[content_type]
                 adaptation_set = as_data['as']
-                print "Checking %s with timescale %d" % (content_type, as_data['track_timescale'])
+                print("Checking %s with timescale %d" % (content_type, as_data['track_timescale']))
                 if self.seg_duration is None:
                     seg_duration = adaptation_set.duration
                     self.seg_duration = seg_duration
@@ -423,9 +423,9 @@ class CCInserter(object):
                         segment_path = rep_data['absMediaPath'] % seg_nr
                         if not os.path.exists(segment_path):
                             if self.verbose:
-                                print "\nLast good %s segment is %d, endTime=%.3fs, totalTime=%.3fs" % (
+                                print("\nLast good %s segment is %d, endTime=%.3fs, totalTime=%.3fs" % (
                                     rep_id, rep_data['endNr'], rep_data['endTime'],
-                                    rep_data['endTime']-rep_data['startTime'])
+                                    rep_data['endTime']-rep_data['startTime']))
                             break
                         #print "Parsing segment: " + segment_path
                         msf = mediasegmentfilter.MediaSegmentFilter(segment_path)
@@ -435,7 +435,7 @@ class CCInserter(object):
 
                         start_time = tfdt / float(track_timescale)
                         end_time = start_time + (duration / float(track_timescale))
-                        print "Segment " + str(seg_nr) + ", start:" + str(start_time) + ", end:" + str(end_time)
+                        print("Segment " + str(seg_nr) + ", start:" + str(start_time) + ", end:" + str(end_time))
                         scc_data_for_segment = self.get_scc_data(start_time, end_time)
                         if len(scc_data_for_segment):
                             #for i in scc_data_for_segment:
@@ -445,7 +445,7 @@ class CCInserter(object):
                             cc_filter = CCInsertFilter(segment_path, scc_data_for_segment, track_timescale, tfdt)
                             output = cc_filter.filter()
 
-                            print os.path.join(self.out_path, "%d.m4s"%seg_nr)
+                            print(os.path.join(self.out_path, "%d.m4s"%seg_nr))
                             with open(os.path.join(self.out_path, "%d.m4s"%seg_nr), "wb") as fil:
                                 fil.write(output)
                                 fil.close()

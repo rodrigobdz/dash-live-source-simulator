@@ -30,7 +30,7 @@
 import unittest
 from xml.etree import ElementTree
 
-from dash_test_util import *
+from .dash_test_util import *
 from dashlivesim.dashlib import dash_proxy
 
 NAMESPACE = 'urn:mpeg:dash:schema:mpd:2011'
@@ -168,7 +168,7 @@ class TestMediaSegments(unittest.TestCase):
         urlParts = ['livesim', 'segtimeline_1', 'testpic', 'A1', 't%d.m4s' % self.seg_time]
         dp = dash_proxy.DashProvider("server.org", urlParts, None, VOD_CONFIG_DIR, CONTENT_ROOT, now=self.now)
         d = dp.handle_request()
-        self.assertTrue(isinstance(d, basestring), "A segment is returned")
+        self.assertTrue(isinstance(d, str), "A segment is returned")
 
     def testThatTimeSegmentIsSameAsNumber(self):
         urlParts = ['livesim', 'segtimeline_1', 'testpic', 'A1', 't%d.m4s' % self.seg_time]

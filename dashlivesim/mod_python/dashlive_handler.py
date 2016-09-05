@@ -60,7 +60,7 @@ def dash_handler(req, server_agent, request_handler):
         args = {}
     try:
         response = request_handler(req.hostname, path_parts, args, now, req)
-        if isinstance(response, basestring):
+        if isinstance(response, str):
             payload_in = response
             if not payload_in:
                 success = False
@@ -69,7 +69,7 @@ def dash_handler(req, server_agent, request_handler):
                 success = False
             payload_in = response["pl"]
     #pylint: disable=broad-except
-    except Exception, exc:
+    except Exception as exc:
         success = False
         req.log_error("mod_dash_handler request error: %s" % exc)
         payload_in = "DASH Proxy Error: %s\n URL=%s" % (exc, url)

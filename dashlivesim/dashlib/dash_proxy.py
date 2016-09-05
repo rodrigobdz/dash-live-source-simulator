@@ -171,7 +171,7 @@ def generate_period_data(mpd_data, now, cfg):
             # print period_data
         for i, pdata in enumerate(period_data):
             if i != len(period_data) - 1: # not last periodDuration
-                if not pdata.has_key('period_duration_s'):
+                if 'period_duration_s' not in pdata:
                     pdata['period_duration_s'] = period_duration
     return period_data
 
@@ -385,7 +385,7 @@ class DashProvider(object):
         mpd_data['maxSegmentDuration'] = 'PT%dS' % in_data['segDuration']
         mpd_data['presentationTimeOffset'] = 0
         mpd_data['availabilityTimeOffset'] = '%f' % in_data['availability_time_offset_in_s']
-        if in_data.has_key('availabilityEndTime'):
+        if 'availabilityEndTime' in in_data:
             mpd_data['availabilityEndTime'] = make_timestamp(in_data['availabilityEndTime'])
         mpd_proc_cfg = {'scte35Present': (cfg.scte35_per_minute > 0),
                         'continuous': in_data['continuous'],

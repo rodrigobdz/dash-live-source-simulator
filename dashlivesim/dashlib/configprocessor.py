@@ -29,7 +29,7 @@
 #  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 #  POSSIBILITY OF SUCH DAMAGE.
 
-import ConfigParser
+import configparser
 from os.path import join, splitext
 from collections import namedtuple
 from .moduloperiod import ModuloPeriod
@@ -98,7 +98,7 @@ class Config(object):
         self.vod_wrap_seconds = None
 
     def __str__(self):
-        lines = ["%s=%s" % (k, v) for (k, v) in self.__dict__.items() if not k.startswith("_")]
+        lines = ["%s=%s" % (k, v) for (k, v) in list(self.__dict__.items()) if not k.startswith("_")]
         lines.sort()
         return "<Config>:\n" + "\n".join(lines)
 
@@ -213,7 +213,7 @@ class VodConfig(object):
 
     def read_config(self, config_file):
         "Read VoD config data."
-        config = ConfigParser.RawConfigParser()
+        config = configparser.RawConfigParser()
         with open(config_file, 'rb') as cfg_file:
             config.readfp(cfg_file)
             version = config.get('General', 'version')
@@ -233,14 +233,14 @@ class VodConfig(object):
                     if version == "1.1":
                         self.media_data[media]['total_duration'] = config.getint(media, "total_duration")
                         self.media_data[media]['dat_file'] = config.get(media, 'dat_file')
-                except (ConfigParser.NoOptionError, ConfigParser.NoSectionError):
+                except (configparser.NoOptionError, configparser.NoSectionError):
                     pass
 
     #pylint: disable=dangerous-default-value
     def write_config(self, config_file, data={}):
         "Write a config file for the analyzed content, that can then be used to serve it efficiently."
         # Note that one needs to write in reverse order
-        config = ConfigParser.RawConfigParser()
+        config = configparser.RawConfigParser()
         config.add_section('General')
         config.set('General', 'version', '1.1')
         config.add_section('Setup')
@@ -250,7 +250,7 @@ class VodConfig(object):
         config.set('Setup', 'first_segment_in_loop', data.get('first_segment_in_loop', self.first_segment_in_loop))
         for content_type in ('video', 'audio', 'subtitles'):
             media_data = data.get('media_data', self.media_data)
-            if media_data.has_key(content_type):
+            if content_type in media_data:
                 config.add_section(content_type)
                 mdata = media_data[content_type]
                 config.set(content_type, 'representations', ','.join(mdata['representations']))
@@ -262,7 +262,7 @@ class VodConfig(object):
 
     def content_type_for_rep(self, representation):
         "Find the ContentType for a representation."
-        for content_type in self.media_data.keys():
+        for content_type in list(self.media_data.keys()):
             mdata = self.media_data[content_type]
             if representation in mdata['representations']:
                 return content_type

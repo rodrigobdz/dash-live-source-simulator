@@ -34,7 +34,7 @@ from .stpp_creator import StppInitFilter, create_media_segment, TTML_TEMPLATE
 from argparse import ArgumentParser
 from jinja2 import Template
 
-BODY_TEMPLATE = u'''
+BODY_TEMPLATE = '''
     <div region="r0">
       {% for p in paragraph %}
       <p xml:id="{{p.id}}" begin="{{p.begin}}" end="{{p.end}}" >
@@ -70,7 +70,7 @@ class SegmentCreator(object):
     #pylint: disable=too-many-locals
     def create_segments(self):
         "Create init and media segments."
-        print "Creating: %dx%d"%(self.number_of_segments, self.segment_duration)
+        print("Creating: %dx%d"%(self.number_of_segments, self.segment_duration))
 
         # Create output directory if it doesn't exist
         if not os.path.exists(self.output_path):

@@ -63,7 +63,7 @@ sthd\x00\x00\x00\x00\x00\x00\x00$dinf\x00\x00\x00\x1cdref\x00\x00\x00\x00\x00\x0
 
 
 #EBU-TT-D sample
-TTML_TEMPLATE = u'''
+TTML_TEMPLATE = '''
 <?xml version="1.0" encoding="UTF-8"?>
 <tt xmlns:ttp="http://www.w3.org/ns/ttml#parameter" xmlns="http://www.w3.org/ns/ttml"
     xmlns:tts="http://www.w3.org/ns/ttml#styling" xmlns:ttm="http://www.w3.org/ns/ttml#metadata"
@@ -94,7 +94,7 @@ TTML_TEMPLATE = u'''
 </tt>
 '''
 
-BODY_TEMPLATE = u'''
+BODY_TEMPLATE = '''
     <div region="r0">
       <p xml:id="s0" begin="00:00:00.00" end="00:00:01.00">
         <span style="s2">The time is 00:00:00</span>
@@ -226,10 +226,10 @@ class StppInitFilter(MP4Filter):
         "Set handler name, if desired."
         hdlr = data[16:20]
         hdlr_name = data[32:-1] # Actually UTF-8 encoded
-        print "Found hdlr %s: %s" % (hdlr, hdlr_name)
+        print("Found hdlr %s: %s" % (hdlr, hdlr_name))
         if self.handler_name:
             output = uint32_to_str(len(self.handler_name) + 33) + data[4:32] + self.handler_name + '\x00'
-            print "Wrote hdlr %s" % self.handler_name
+            print("Wrote hdlr %s" % self.handler_name)
         else:
             output = data
         return output

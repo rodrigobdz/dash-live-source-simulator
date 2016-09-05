@@ -31,13 +31,13 @@
 
 import copy
 from xml.etree import ElementTree
-import cStringIO
+import io
 import time
 
-from timeformatconversions import make_timestamp
-import scte35
-from segtimeline import SegmentTimeLineGenerator
-from dash_namespace import add_ns
+from .timeformatconversions import make_timestamp
+from . import scte35
+from .segtimeline import SegmentTimeLineGenerator
+from .dash_namespace import add_ns
 
 SET_BASEURL = True
 
@@ -48,13 +48,13 @@ UTC_TIMING_SNTP_SERVER = 'time.kfki.hu'
 
 def set_value_from_dict(element, key, data):
     "Set attribute key of element to value data[key], if present."
-    if data.has_key(key):
+    if key in data:
         element.set(key, str(data[key]))
 
 def set_values_from_dict(element, keys, data):
     "Set attribute key of element to value data[key] for all keys (if present)."
     for key in keys:
-        if data.has_key(key):
+        if key in data:
             element.set(key, str(data[key]))
 
 
@@ -98,12 +98,12 @@ class MpdProcessor(object):
         key_list = ['availabilityStartTime', 'availabilityEndTime', 'timeShiftBufferDepth',
                     'minimumUpdatePeriod', 'maxSegmentDuration', 'mediaPresentationDuration']
         set_values_from_dict(mpd, key_list, data)
-        if mpd.attrib.has_key('mediaPresentationDuration') and not data.has_key('mediaPresentationDuration'):
+        if 'mediaPresentationDuration' in mpd.attrib and 'mediaPresentationDuration' not in data:
             del mpd.attrib['mediaPresentationDuration']
         mpd.set('publishTime', make_timestamp(self.mpd_proc_cfg['now'])) #TODO Correlate time with change in MPD
         mpd.set('id', 'Config part of url maybe?')
         if self.segtimeline:
-            if mpd.attrib.has_key('maxSegmentDuration'):
+            if 'maxSegmentDuration' in mpd.attrib:
                 del mpd.attrib['maxSegmentDuration']
             mpd.set('minimumUpdatePeriod', "PT0S")
 
@@ -113,7 +113,7 @@ class MpdProcessor(object):
         """Process the children of the MPD element.
         They should be in order ProgramInformation, BaseURL, Location, Period, UTCTiming, Metrics."""
         ato = 0
-        if data.has_key('availabilityTimeOffset'):
+        if 'availabilityTimeOffset' in data:
             ato = data['availabilityTimeOffset']
         children = mpd.getchildren()
         pos = 0
@@ -123,13 +123,13 @@ class MpdProcessor(object):
             pos += 1
         next_child = mpd.getchildren()[pos]
         if next_child.tag == add_ns('BaseURL'):
-            if not data.has_key('BaseURL') or not SET_BASEURL:
+            if 'BaseURL' not in data or not SET_BASEURL:
                 self.root.remove(next_child)
             else:
                 self.modify_baseurl(next_child, data['BaseURL'])
                 pos += 1
-        elif data.has_key('BaseURL') and SET_BASEURL:
-            if data.has_key('urls') and data['urls']: # check if we have to set multiple URLs
+        elif 'BaseURL' in data and SET_BASEURL:
+            if 'urls' in data and data['urls']: # check if we have to set multiple URLs
                 url_header, url_body = data['BaseURL'].split('//')
                 url_parts = url_body.split('/')
                 i = -1
@@ -141,7 +141,7 @@ class MpdProcessor(object):
                     key, _ = cfg_parts
                     if key == "baseurl":
                         url_parts[i] = "" #Remove all the baseurl elements
-                url_parts = filter(None, url_parts)
+                url_parts = [_f for _f in url_parts if _f]
                 for url in data['urls']:
                     url_parts.insert(-1, "baseurl_" + url)
                     self.insert_baseurl(mpd, pos, url_header + "//" + "/".join(url_parts) + "/", ato)
@@ -190,7 +190,7 @@ class MpdProcessor(object):
         def set_attribs(elem, keys, data):
             "Set element attributes from data."
             for key in keys:
-                if data.has_key(key):
+                if key in data:
                     if key == "presentationTimeOffset" and str(data[key]) == "0": # Remove default value
                         if key in elem:
                             del elem[key]
@@ -223,9 +223,9 @@ class MpdProcessor(object):
         last_period_id = '-1'
         for (period, pdata) in zip(periods, period_data):
             set_attribs(period, ('id', 'start'), pdata)
-            if pdata.has_key('etpDuration'):
+            if 'etpDuration' in pdata:
                 period.set('duration', "PT%dS" % pdata['etpDuration'])
-            if pdata.has_key('periodDuration'):
+            if 'periodDuration' in pdata:
                 period.set('duration', pdata['periodDuration'])
             segmenttemplate_attribs = ['startNumber']
             pto = pdata['presentationTimeOffset']
@@ -258,7 +258,7 @@ class MpdProcessor(object):
                         tsbd = self.cfg.timeshift_buffer_depth_in_s
                         ast = self.cfg.availability_start_time_in_s
                         start_time = max(ast + pdata['start_s'], now - tsbd)
-                        if pdata.has_key('period_duration_s'):
+                        if 'period_duration_s' in pdata:
                             end_time = min(ast + pdata['start_s'] + pdata['period_duration_s'], now)
                         else:
                             end_time = now
@@ -313,7 +313,7 @@ class MpdProcessor(object):
 
     def get_full_xml(self, clean=True):
         "Get a string of all XML cleaned (no ns0 namespace)"
-        ofh = cStringIO.StringIO()
+        ofh = io.StringIO()
         self.tree.write(ofh, encoding="utf-8")#, default_namespace=NAMESPACE)
         value = ofh.getvalue()
         if clean:

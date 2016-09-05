@@ -89,9 +89,9 @@ class DashAnalyzer(object):
         for adaptation_set in self.mpdProcessor.get_adaptation_sets():
             content_type = adaptation_set.content_type
             if content_type is None:
-                print "No contentType for adaptation set"
+                print("No contentType for adaptation set")
                 sys.exit(1)
-            if self.as_data.has_key(content_type):
+            if content_type in self.as_data:
                 raise DashAnalyzerError("Multiple adaptation sets for contentType " + content_type)
             as_data = {'as' : adaptation_set, 'reps' : []}
             as_data['presentationDurationInS'] = self.mpdProcessor.media_presentation_duration_in_s
@@ -105,20 +105,20 @@ class DashAnalyzer(object):
                 init_filter = initsegmentfilter.InitFilter(rep_data['absInitPath'])
                 init_filter.filter()
                 rep_data['trackID'] = init_filter.track_id
-                print "%s trackID = %d" % (content_type, rep_data['trackID'])
+                print("%s trackID = %d" % (content_type, rep_data['trackID']))
                 rep_data['relMediaPath'] = rep.get_media_path()
                 rep_data['absMediaPath'] = os.path.join(self.base_path, rep.get_media_path())
 
                 self.getSegmentRange(rep_data)
                 track_timescale = init_filter.track_timescale
-                if not as_data.has_key('track_timescale'):
+                if 'track_timescale' not in as_data:
                     as_data['track_timescale'] = track_timescale
                 elif track_timescale != as_data['track_timescale']:
                     raise DashAnalyzerError("Timescales not consistent between %s tracks" % content_type)
                 if self.verbose:
-                    print "%s data: " % content_type
-                    for (k, v) in rep_data.items():
-                        print "  %s=%s" % (k, v)
+                    print("%s data: " % content_type)
+                    for (k, v) in list(rep_data.items()):
+                        print("  %s=%s" % (k, v))
 
     def getSegmentRange(self, rep_data):
         "Search the directory for the first and last segment and set firstNumber and lastNumber for this MediaType."
@@ -137,7 +137,7 @@ class DashAnalyzer(object):
         for i in range(1, len(numbers)):
             if numbers[i] != numbers[i-1] + 1:
                 raise DashAnalyzerError("%s segment missing between %d and %d" % (rep_id, numbers[i-1], numbers[i]))
-        print "Found %s segments %d - %d" % (rep_id, numbers[0], numbers[-1])
+        print("Found %s segments %d - %d" % (rep_id, numbers[0], numbers[-1]))
         rep_data['firstNumber'] = numbers[0]
         rep_data['lastNumber'] = numbers[-1]
 
@@ -145,18 +145,18 @@ class DashAnalyzer(object):
         """Check all segments for good values and return startTimes and total duration."""
         lastGoodSegments = []
         seg_duration = None
-        print "Checking all the media segment durations for deviations."
+        print("Checking all the media segment durations for deviations.")
 
         def writeSegTiming(ofh, firstSegmentInRepeat, firstStartTimeInRepeat, duration, repeatCount):
             data = pack(configprocessor.SEGTIMEFORMAT, firstSegmentInRepeat, repeatCount,
                         firstStartTimeInRepeat, duration)
             ofh.write(data)
 
-        for content_type in self.as_data.keys():
+        for content_type in list(self.as_data.keys()):
             as_data = self.as_data[content_type]
             as_data['datFile'] = "%s_%s.dat" % (self.base_name, content_type)
             adaptation_set = as_data['as']
-            print "Checking %s with timescale %d" % (content_type, as_data['track_timescale'])
+            print("Checking %s with timescale %d" % (content_type, as_data['track_timescale']))
             if self.segDuration is None:
                 self.segDuration = adaptation_set.duration
             else:
@@ -189,15 +189,15 @@ class DashAnalyzer(object):
                         segmentPath = rep_data['absMediaPath'] % segNr
                         if not os.path.exists(segmentPath):
                             if self.verbose:
-                                print "\nLast good %s segment is %d, endTime=%.3fs, totalTime=%.3fs" % (
+                                print("\nLast good %s segment is %d, endTime=%.3fs, totalTime=%.3fs" % (
                                     rep_id, rep_data['endNr'], rep_data['endTime'],
-                                    rep_data['endTime']-rep_data['startTime'])
+                                    rep_data['endTime']-rep_data['startTime']))
                             break
                         msf = mediasegmentfilter.MediaSegmentFilter(segmentPath)
                         msf.filter()
                         tfdt = msf.get_tfdt_value()
                         duration = msf.get_duration()
-                        print "{0} {1:8d} {2}  {3}".format(content_type, segNr, tfdt, duration)
+                        print("{0} {1:8d} {2}  {3}".format(content_type, segNr, tfdt, duration))
                         if duration == lastDuration:
                             repeatCount += 1
                         else:
@@ -210,8 +210,8 @@ class DashAnalyzer(object):
                         if rep_data['startTick'] is None:
                             rep_data['startTick'] = tfdt
                             rep_data['startTime'] = rep_data['startTick']/float(track_timescale)
-                            print "First %s segment is %d starting at time %.3fs" % (rep_id, segNr,
-                                                                                     rep_data['startTime'])
+                            print("First %s segment is %d starting at time %.3fs" % (rep_id, segNr,
+                                                                                     rep_data['startTime']))
                         # Check that there is not too much drift. We want to end with at most maxDiffInTicks
                         endTick = tfdt + duration
                         idealTicks = (segNr - rep_data['firstNumber'] + 1)*segTicks + rep_data['startTick']
@@ -232,9 +232,9 @@ class DashAnalyzer(object):
         self.nrSegmentsInLoop = self.lastSegmentInLoop-self.firstSegmentInLoop+1
         self.loopTime = self.nrSegmentsInLoop*self.segDuration
         if self.verbose:
-            print ""
-        print "Will loop segments %d-%d with loop time %ds" % (self.firstSegmentInLoop, self.lastSegmentInLoop,
-                                                               self.loopTime)
+            print("")
+        print("Will loop segments %d-%d with loop time %ds" % (self.firstSegmentInLoop, self.lastSegmentInLoop,
+                                                               self.loopTime))
 
     def write_config(self, config_file):
         "Write a config file for the analyzed content, that can then be used to serve it efficiently."
@@ -242,7 +242,7 @@ class DashAnalyzer(object):
                     'nr_segments_in_loop' : self.nrSegmentsInLoop, 'segment_duration_s' : self.segDuration}
         media_data = {}
         for content_type in ('video', 'audio'):
-            if self.as_data.has_key(content_type):
+            if content_type in self.as_data:
                 mdata = self.as_data[content_type]
                 media_data[content_type] = {'representations' : [rep['id'] for rep in mdata['reps']],
                                             'timescale' : mdata['track_timescale'],

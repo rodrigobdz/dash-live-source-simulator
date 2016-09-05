@@ -34,9 +34,9 @@ from struct import unpack
 from xml.etree import ElementTree
 import bisect
 
-from configprocessor import SEGTIMEFORMAT, SegTimeEntry
+from .configprocessor import SEGTIMEFORMAT, SegTimeEntry
 
-from dash_namespace import add_ns
+from .dash_namespace import add_ns
 
 
 class SegmentTimeLineGeneratorError(Exception):
@@ -52,8 +52,8 @@ class SegmentTimeLineGenerator(object):
         self.cfg = cfg
         try:
             dat_file = media_data['dat_file']
-        except KeyError, e:
-            print "Error for %s: %s" % (media_data, e)
+        except KeyError as e:
+            print("Error for %s: %s" % (media_data, e))
         dat_file_path = os.path.join(self.cfg.vod_cfg_dir, dat_file)
         self.segtimedata = [] # Tuples corresponding to SegTimeEntry
         with open(dat_file_path, "rb") as ifh:

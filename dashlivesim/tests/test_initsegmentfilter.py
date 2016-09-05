@@ -29,7 +29,7 @@
 
 import unittest
 
-from dash_test_util import *
+from .dash_test_util import *
 from dashlivesim.dashlib import initsegmentfilter
 
 class TestInitParsing(unittest.TestCase):

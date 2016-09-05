@@ -29,11 +29,12 @@
 
 import unittest
 
-from dash_test_util import *
+from .dash_test_util import *
 from dashlivesim.dashlib import dash_proxy
 from re import findall
 from operator import mul
 from dashlivesim.dashlib import mpdprocessor
+from functools import reduce
 
 class TestXlinkPeriod(unittest.TestCase):
 
