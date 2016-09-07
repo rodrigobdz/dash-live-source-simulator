@@ -96,9 +96,9 @@ def create_emsg(scheme_id_uri="", value="", timescale=1, presentation_time_delta
 def main():
     "Main function for testing."
     print("Writing file emsg.mp4")
-    ofh = open("emsg.mp4", "wb")
-    emsg = create_emsg(DASH_SCHEME, "1", 2000, 100, 345, 1, "xmldata")
-    ofh.write(emsg)
+    with open("emsg.mp4", "wb") as ofh:
+        emsg = create_emsg(DASH_SCHEME, "1", 2000, 100, 345, 1, "xmldata")
+        ofh.write(emsg)
 
 if __name__ == "__main__":
     main()

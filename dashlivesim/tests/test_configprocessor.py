@@ -36,6 +36,6 @@ class TestConfigProcessor(unittest.TestCase):
 
     def testReadVodConfigFile(self):
         cfg_file = os.path.join(VOD_CONFIG_DIR, 'testpic.cfg')
-        ifh = open(cfg_file, "rb")
-        vod_cfg = configprocessor.VodConfig()
-        vod_cfg.read_config(cfg_file)
+        with open(cfg_file, "rb") as ifh:
+	        vod_cfg = configprocessor.VodConfig()
+	        vod_cfg.read_config(cfg_file)

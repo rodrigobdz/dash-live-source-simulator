@@ -46,9 +46,8 @@ def write_data_to_outfile(data, filename):
     "Write data to a file in OUT_DIR."
     if not exists(OUT_DIR):
         makedirs(OUT_DIR)
-    ofh = open(join(OUT_DIR, filename), "wb")
-    ofh.write(data)
-    ofh.close()
+    with open(join(OUT_DIR, filename), "wb") as ofh:
+        ofh.write(data)
 
 def findAllIndexes(needle, haystack):
     """Find the index for the beginning of each occurrence of ``needle`` in ``haystack``. Overlaps are allowed."""
