@@ -314,7 +314,7 @@ class MpdProcessor(object):
     def get_full_xml(self, clean=True):
         "Get a string of all XML cleaned (no ns0 namespace)"
         ofh = io.StringIO()
-        self.tree.write(ofh, encoding="utf-8")#, default_namespace=NAMESPACE)
+        self.tree.write(ofh, encoding="unicode")#, default_namespace=NAMESPACE)
         value = ofh.getvalue()
         if clean:
             value = value.replace("ns0:", "").replace("xmlns:ns0=", "xmlns=")

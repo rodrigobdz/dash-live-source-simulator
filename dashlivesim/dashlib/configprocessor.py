@@ -214,8 +214,13 @@ class VodConfig(object):
     def read_config(self, config_file):
         "Read VoD config data."
         config = configparser.RawConfigParser()
-        with open(config_file, 'rb') as cfg_file:
-            config.readfp(cfg_file)
+        with open(config_file) as cfg_file:
+            def readline_generator(f):
+                line = f.readline()
+                while line:
+                    yield line
+                    line = f.readline()
+            config.read_file(readline_generator(cfg_file))
             version = config.get('General', 'version')
             if version not in self.good_versions:
                 raise ConfigProcessorError("Bad config file version: %s (should be in %s)" % (version,

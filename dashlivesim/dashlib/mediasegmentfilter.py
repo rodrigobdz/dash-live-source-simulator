@@ -305,7 +305,7 @@ class MediaSegmentFilter(MP4Filter):
             size = str_to_uint32(data[pos:pos+4])
             boxtype = data[pos+4:pos+8]
             if boxtype != 'mdat':
-                output += data[pos:pos+size]
+                output += data[pos:pos+size].decode('latin-1')
             else:
                 output += self.update_ttml_mdat(data[pos:pos+size])
             pos += size

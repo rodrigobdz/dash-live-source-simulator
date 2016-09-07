@@ -76,7 +76,7 @@ class MP4Filter(object):
             if boxtype in self.top_level_boxes_to_parse:
                 self.output += self.filter_box(boxtype, boxdata, len(self.output))
             else:
-                self.output += boxdata
+                self.output += boxdata.decode('latin-1')
             pos += size
         if self.next_phase_data:
             self.nr_iterations_done += 1

@@ -150,7 +150,7 @@ class DashAnalyzer(object):
         def writeSegTiming(ofh, firstSegmentInRepeat, firstStartTimeInRepeat, duration, repeatCount):
             data = pack(configprocessor.SEGTIMEFORMAT, firstSegmentInRepeat, repeatCount,
                         firstStartTimeInRepeat, duration)
-            ofh.write(data)
+            ofh.write(bytes(data,'UTF-8'))
 
         for content_type in list(self.as_data.keys()):
             as_data = self.as_data[content_type]

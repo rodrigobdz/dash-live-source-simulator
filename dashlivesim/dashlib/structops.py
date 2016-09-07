@@ -33,19 +33,31 @@ from struct import pack, unpack
 
 def str_to_uint32(string4):
     "4-character string to unsigned int32."
+    if isinstance(string4, str):
+        string4 = bytes(string4, 'latin-1')
     return unpack(">I", string4)[0]
 
 def str_to_sint32(string4):
     "4-character string to signed int32."
+    string4 = bytes(bytearray(string4))
     return unpack(">i", string4)[0]
 
 def str_to_uint64(string8):
     "8-character string to unsigned int64."
+    string8 = bytes(bytearray(string8))
     return unpack(">Q", string8)[0]
 
 def uint32_to_str(uint32):
     "Unsigned int32 to string."
-    return pack(">I", uint32)
+    if not(isinstance(uint32, int)):
+        import pdb
+        pdb.set_trace()
+    result = pack(">I", uint32)
+    if not(isinstance(result, str)):
+        # import pdb
+        # pdb.set_trace()
+        str_res = str(result)[2:-1]
+    return str_res
 
 def sint32_to_str(sint32):
     "Signed int32 to string."
