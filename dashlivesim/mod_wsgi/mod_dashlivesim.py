@@ -38,6 +38,8 @@ from os.path import splitext
 from time import time
 from dashlivesim.dashlib import dash_proxy
 
+from http2 import push_headers
+
 # Helper for HTTP responses
 #pylint: disable=dangerous-default-value
 def reply(code, resp, body='', headers={}):
@@ -128,6 +130,9 @@ def application(environment, start_response):
 
     # Setup response headers
     headers = {'Content-Type':mimetype}
+    
+    # Setup push headers
+    push_headers.add_push_headers(headers, url)    
 
     if status != httplib.NOT_FOUND:
         if range_line:
