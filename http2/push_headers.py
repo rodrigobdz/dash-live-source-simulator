@@ -8,6 +8,13 @@
   Assumptions:
     The resources to be pushed are named sequentially.
 
+  Requirements:
+    Two different WSGIAliases when using Apache.
+    WSGIAliases are defined in dashlivesim.conf.
+    They must match the ones defined in wsgi_aliases:
+    1. livesim
+    2. livesim_no_push
+
   Example: 
     For k = 3, meaning that we want the server to push the next 3 resources after n.
 
@@ -51,9 +58,15 @@ def add_push_headers(headers, url, k=3):
       k
         Number of segments to be pushed along with the requested resource
     """
-    
+
     # Split url into main components
     processed_url = process_url(url)
+
+    wsgi_aliases = wsgi_aliases()
+
+    # Only push further content if url indicates so
+    if processed_url['wsgi_alias'] == wsgi_aliases['no_push']:
+      return
     
     try:
         requested_resource_number = int(processed_url['resource_name'])
@@ -64,7 +77,7 @@ def add_push_headers(headers, url, k=3):
             return
 
         # Log error
-        print '\nHTTP/2 push helper ERROR:'
+        print 'HTTP/2 push helper ERROR:'
         print processed_url['resource_name'] + ' cannot be converted to int.'
         print 'Nothing will be pushed for this request.\n'
         return 
@@ -113,10 +126,18 @@ def process_url(url):
     """
     path_parts = url.split('/')
 
-    processed_url = {}  
+    processed_url = {}
+    processed_url['wsgi_alias'] = splitext(path_parts[1])  
     processed_url['resource_name'] = splitext(path_parts[-1])[0]
     processed_url['base_url'] = '/'.join(path_parts[:-1])+'/'
     processed_url['ext'] = splitext(path_parts[-1])[1]
+
+    wsgi_aliases = wsgi_aliases()
+
+    # Store base url with no push, to avoid recursively linking resources
+    # with every request.
+    if processed_url['wsgi_alias'] == wsgi_aliases['default']:
+      processed_url['base_url'] = url.replace(wsgi_aliases['default'], wsgi_aliases['no_push'])
 
     return processed_url
 
@@ -127,3 +148,14 @@ def format_header_link(base_url, resource):
     """
     return '<' + base_url + resource + '>; rel=preload'
 
+
+def wsgi_aliases():
+    """
+    WSGIAliases are stored here as well as in the dashlivesim.conf
+    The WSGIAliases in the conf file must match the ones defined here.
+    """
+    wsgi_aliases = {}
+    wsgi_aliases['default'] = 'livesim'
+    wsgi_aliases['no_push'] = 'livesim_no_push'
+
+    return wsgi_aliases
