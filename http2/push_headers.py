@@ -66,7 +66,7 @@ def add_push_headers(headers, url, k=3):
 
     # Only push further content if url indicates so
     if processed_url['wsgi_alias'] == wsgi_aliases['no_push']:
-      return
+        return
     
     try:
         requested_resource_number = int(processed_url['resource_name'])
@@ -76,10 +76,8 @@ def add_push_headers(headers, url, k=3):
             # headers['Link'] = format_header_link( processed_url['base_url'], )
             return
 
-        # Log error
-        print 'HTTP/2 push helper ERROR:'
-        print processed_url['resource_name'] + ' cannot be converted to int.'
-        print 'Nothing will be pushed for this request.\n'
+        # In this case nothing will be pushed
+        log_error(processed_url['resource_name'] + ' cannot be converted to int.')
         return 
     
     
@@ -137,7 +135,7 @@ def process_url(url):
     # Store base url with no push, to avoid recursively linking resources
     # with every request.
     if processed_url['wsgi_alias'] == wsgi_aliases['default']:
-      processed_url['base_url'] = url.replace(wsgi_aliases['default'], wsgi_aliases['no_push'])
+        processed_url['base_url'] = url.replace(wsgi_aliases['default'], wsgi_aliases['no_push'])
 
     return processed_url
 
@@ -159,3 +157,7 @@ def wsgi_aliases():
     wsgi_aliases['no_push'] = 'livesim_no_push'
 
     return wsgi_aliases
+
+
+def log_error(msg):
+    print 'HTTP2 Push helper ERROR: ' + msg
