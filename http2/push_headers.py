@@ -59,10 +59,10 @@ def add_push_headers(headers, url, k=3):
         Number of segments to be pushed along with the requested resource
     """
 
-    # Split url into main components
-    processed_url = process_url(url)
+    wsgi_aliases = get_wsgi_aliases()
 
-    wsgi_aliases = wsgi_aliases()
+    # Split url into main components
+    processed_url = process_url(url, wsgi_aliases)
 
     # Only push further content if url indicates so
     if processed_url['wsgi_alias'] == wsgi_aliases['no_push']:
@@ -80,7 +80,7 @@ def add_push_headers(headers, url, k=3):
         log_error(processed_url['resource_name'] + ' cannot be converted to int.')
         return 
     
-    
+   
     # Build push headers for the next k segments
     push_headers = ''
     for i in range(k):
@@ -98,7 +98,7 @@ def add_push_headers(headers, url, k=3):
     headers['Link'] = push_headers
 
 
-def process_url(url):
+def process_url(url, wsgi_aliases):
     """
     Process url and return its main parts
       
@@ -130,8 +130,6 @@ def process_url(url):
     processed_url['base_url'] = '/'.join(path_parts[:-1])+'/'
     processed_url['ext'] = splitext(path_parts[-1])[1]
 
-    wsgi_aliases = wsgi_aliases()
-
     # Store base url with no push, to avoid recursively linking resources
     # with every request.
     if processed_url['wsgi_alias'] == wsgi_aliases['default']:
@@ -147,7 +145,7 @@ def format_header_link(base_url, resource):
     return '<' + base_url + resource + '>; rel=preload'
 
 
-def wsgi_aliases():
+def get_wsgi_aliases():
     """
     WSGIAliases are stored here as well as in the dashlivesim.conf
     The WSGIAliases in the conf file must match the ones defined here.
