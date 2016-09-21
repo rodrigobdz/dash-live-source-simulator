@@ -291,13 +291,13 @@ class DashProvider(object):
         self.now_float = now  # float
         self.now = int(now)
 
-    def wait_for_segment_to_become_available(diff, cb_after_waiting, *args):
+    def wait_for_segment_to_become_available(self, seconds_to_wait, cb_after_waiting, args):
         """
         Segment was requested too early.
         Sleep until segment becomes available and call function again.
         """
-        sleep(diff)
-        update_now(self)
+        sleep(seconds_to_wait)
+        self.update_now()
         cb_after_waiting(*args)
 
     def handle_request(self):
@@ -343,7 +343,7 @@ class DashProvider(object):
         elif cfg.ext == ".mp4":
             if self.now < cfg.availability_start_time_in_s - cfg.init_seg_avail_offset:
                 diff = (cfg.availability_start_time_in_s - cfg.init_seg_avail_offset) - self.now_float
-                return self.wait_for_segment_to_become_available(diff, self.parse_url, self)
+                return self.wait_for_segment_to_become_available(seconds_to_wait=diff, cb_after_waiting=self.parse_url, args=[])
                 # response = self.error_response("Request for %s was %.1fs too early" % (cfg.filename, diff))
             else:
                 response = self.process_init_segment(cfg)
@@ -356,7 +356,7 @@ class DashProvider(object):
 
             if self.now_float < first_segment_ast:
                 diff = first_segment_ast - self.now_float
-                return self.wait_for_segment_to_become_available(diff, self.parse_url, self)
+                return self.wait_for_segment_to_become_available(seconds_to_wait=diff, cb_after_waiting=self.parse_url, args=[])
                 # response = self.error_response("Request %s before first seg AST. %.1fs too early" %
                                                # (cfg.filename, diff))
             elif cfg.availability_end_time is not None and \
@@ -476,7 +476,8 @@ class DashProvider(object):
 
         if cfg.availability_time_offset_in_s != -1:
             if now_float < seg_ast - cfg.availability_time_offset_in_s:
-                return self.wait_for_segment_to_become_available(seg_ast - now_float, self.process_media_segment, self, cfg, self.now_float)
+                diff = (seg_ast - now_float)
+                return self.wait_for_segment_to_become_available(seconds_to_wait=diff, cb_after_waiting=self.process_media_segment, args=[cfg, now_float])
                 # return self.error_response("Request for %s was %.1fs too early" % (seg_name, seg_ast - now_float))
             if now_float > seg_ast + seg_dur + cfg.timeshift_buffer_depth_in_s:
                 diff = now_float - (seg_ast + seg_dur + cfg.timeshift_buffer_depth_in_s)
