@@ -323,7 +323,8 @@ class DashProvider(object):
                 response = generate_response_with_xlink(response, cfg.ext, cfg.filename, nr_periods_per_hour,
                                                         nr_xlink_periods_per_hour, mpd_input_data['insertAd'])
         elif cfg.ext == ".mp4":
-            if self.now < cfg.availability_start_time_in_s - cfg.init_seg_avail_offset:
+            segment_requested_too_early = self.now < cfg.availability_start_time_in_s - cfg.init_seg_avail_offset
+            if segment_requested_too_early:
                 diff = (cfg.availability_start_time_in_s - cfg.init_seg_avail_offset) - self.now_float
                 response = self.error_response("Request for %s was %.1fs too early" % (cfg.filename, diff))
             else:
@@ -335,12 +336,15 @@ class DashProvider(object):
                 first_segment_ast = cfg.availability_start_time_in_s + cfg.seg_duration - \
                                     cfg.availability_time_offset_in_s
 
-            if self.now_float < first_segment_ast:
+            segment_requested_too_early = self.now_float < first_segment_ast
+            segment_requested_too_late = not segment_requested_too_early and (cfg.availability_end_time is not None and \
+                            self.now > cfg.availability_end_time + EXTRA_TIME_AFTER_END_IN_S)
+
+            if segment_requested_too_early:
                 diff = first_segment_ast - self.now_float
                 response = self.error_response("Request %s before first seg AST. %.1fs too early" %
                                                (cfg.filename, diff))
-            elif cfg.availability_end_time is not None and \
-                            self.now > cfg.availability_end_time + EXTRA_TIME_AFTER_END_IN_S:
+            elif segment_requested_too_late:
                 diff = self.now_float - (cfg.availability_end_time + EXTRA_TIME_AFTER_END_IN_S)
                 response = self.error_response("Request for %s after AET. %.1fs too late" % (cfg.filename, diff))
             else:
@@ -455,9 +459,11 @@ class DashProvider(object):
         seg_ast = seg_time + seg_dur
 
         if cfg.availability_time_offset_in_s != -1:
-            if now_float < seg_ast - cfg.availability_time_offset_in_s:
+            segment_requested_too_early = now_float < seg_ast - cfg.availability_time_offset_in_s
+            segment_requested_too_late = now_float > seg_ast + seg_dur + cfg.timeshift_buffer_depth_in_s
+            if segment_requested_too_early:
                 return self.error_response("Request for %s was %.1fs too early" % (seg_name, seg_ast - now_float))
-            if now_float > seg_ast + seg_dur + cfg.timeshift_buffer_depth_in_s:
+            if segment_requested_too_late:
                 diff = now_float - (seg_ast + seg_dur + cfg.timeshift_buffer_depth_in_s)
                 return self.error_response("Request for %s was %.1fs too late" % (seg_name, diff))
 
