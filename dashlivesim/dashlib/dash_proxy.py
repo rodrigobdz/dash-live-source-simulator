@@ -72,6 +72,8 @@ from . import mpdprocessor
 from .timeformatconversions import make_timestamp, seconds_to_iso_duration
 from .configprocessor import ConfigProcessor
 from xml.etree import ElementTree as ET
+from time import time
+from time import sleep
 
 SECS_IN_DAY = 24 * 3600
 DEFAULT_MINIMUM_UPDATE_PERIOD = "P100Y"
@@ -282,6 +284,18 @@ class DashProvider(object):
         self.now = int(now)
         self.req = req
         self.new_tfdt_value = None
+        self.should_wait_for_segment_availability = True
+
+    def update_now(self, seconds_to_wait):
+        "Update now timestamp."
+        now = self.now_float + seconds_to_wait
+        self.now_float = now  # float
+        self.now = int(now)
+
+    def wait_for_segment_to_become_available(self, seconds_to_wait):
+        "Sleep until segment becomes available and update now timestamps."
+        sleep(seconds_to_wait)
+        self.update_now()
 
     def handle_request(self):
         "Handle the HTTP request."
