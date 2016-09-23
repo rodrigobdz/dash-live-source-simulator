@@ -372,7 +372,7 @@ class DashProvider(object):
                 response = self.error_response("Request for %s after AET. %.1fs too late" % (cfg.filename, diff))
             
             if (not segment_requested_too_early and not segment_requested_too_late) or \
-                    (segment_requested_too_early and self.should_wait_for_segment_availability)                
+                    (segment_requested_too_early and self.should_wait_for_segment_availability):
                 response = self.process_media_segment(cfg, self.now_float)
                 if len(cfg.multi_url) == 1:  # There is one specific baseURL with losses specified
                     a_var, b_var = cfg.multi_url[0].split("_")
