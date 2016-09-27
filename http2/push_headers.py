@@ -151,7 +151,7 @@ def get_wsgi_aliases():
     The WSGIAliases in the conf file must match the ones defined here.
     """
     wsgi_aliases = {}
-    wsgi_aliases['default'] = 'livesim'
+    wsgi_aliases['default'] = 'livesim_http2'
     wsgi_aliases['no_push'] = 'livesim_no_push'
 
     return wsgi_aliases
