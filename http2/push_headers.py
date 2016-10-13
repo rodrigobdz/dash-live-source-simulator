@@ -133,7 +133,7 @@ def process_url(url, wsgi_aliases):
     # Store base url with no push, to avoid recursively linking resources
     # with every request.
     if processed_url['wsgi_alias'] == wsgi_aliases['default']:
-        processed_url['base_url'] = url.replace(wsgi_aliases['default'], wsgi_aliases['no_push'])
+        processed_url['base_url'] = processed_url['base_url'].replace(wsgi_aliases['default'], wsgi_aliases['no_push'])
 
     return processed_url
 
