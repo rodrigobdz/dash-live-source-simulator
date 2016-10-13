@@ -295,7 +295,7 @@ class DashProvider(object):
     def wait_for_segment_to_become_available(self, seconds_to_wait):
         "Sleep until segment becomes available and update now timestamps."
         sleep(seconds_to_wait)
-        self.update_now()
+        self.update_now(seconds_to_wait)
 
     def handle_request(self):
         "Handle the HTTP request."
