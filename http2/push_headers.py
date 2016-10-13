@@ -125,7 +125,7 @@ def process_url(url, wsgi_aliases):
     path_parts = url.split('/')
 
     processed_url = {}
-    processed_url['wsgi_alias'] = splitext(path_parts[1])  
+    processed_url['wsgi_alias'] = splitext(path_parts[1])[0]
     processed_url['resource_name'] = splitext(path_parts[-1])[0]
     processed_url['base_url'] = '/'.join(path_parts[:-1])+'/'
     processed_url['ext'] = splitext(path_parts[-1])[1]
@@ -158,4 +158,4 @@ def get_wsgi_aliases():
 
 
 def log_error(msg):
-    print 'HTTP2 Push helper ERROR: ' + msg
+    print 'DLS HTTP2 ERR: ' + msg
