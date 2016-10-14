@@ -42,6 +42,8 @@
 # Rodrigo Bermudez Schettino
 #
 
+HTTP2_DEBUG = False
+
 from os.path import splitext
 
 def add_push_headers(headers, url, k=3):
@@ -75,9 +77,10 @@ def add_push_headers(headers, url, k=3):
         if processed_url['resource_name'] == 'Manifest':
             # headers['Link'] = format_header_link( processed_url['base_url'], )
             return
-
+        
         # In this case nothing will be pushed
-        log_error(processed_url['resource_name'] + ' cannot be converted to int.')
+        if HTTP2_DEBUG and not(processed_url['resource_name'] == 'init'):
+          log_error(processed_url['resource_name'] + ' cannot be converted to int.')
         return 
     
    
