@@ -84,6 +84,8 @@ UTC_HEAD_PATH = "dash/time.txt"
 
 PUBLISH_TIME = False
 
+WAIT_FOR_SEGMENT_AVAILABILITY = False
+
 
 def handle_request(host_name, url_parts, args, vod_conf_dir, content_dir, now=None, req=None, is_https=0):
     "Handle Apache request."
@@ -284,7 +286,6 @@ class DashProvider(object):
         self.now = int(now)
         self.req = req
         self.new_tfdt_value = None
-        self.should_wait_for_segment_availability = True
 
     def update_now(self, seconds_to_wait):
         "Update now timestamp."
@@ -342,12 +343,12 @@ class DashProvider(object):
 
             if segment_requested_too_early:
                 diff = (cfg.availability_start_time_in_s - cfg.init_seg_avail_offset) - self.now_float
-                if self.should_wait_for_segment_availability:
+                if WAIT_FOR_SEGMENT_AVAILABILITY:
                     self.wait_for_segment_to_become_available(diff)
                 else:
                     response = self.error_response("Request for %s was %.1fs too early" % (cfg.filename, diff))
             
-            if not segment_requested_too_early or (segment_requested_too_early and self.should_wait_for_segment_availability):
+            if not segment_requested_too_early or (segment_requested_too_early and WAIT_FOR_SEGMENT_AVAILABILITY):
                 response = self.process_init_segment(cfg)
         elif cfg.ext == ".m4s":
             if cfg.availability_time_offset_in_s == -1:
@@ -362,7 +363,7 @@ class DashProvider(object):
 
             if segment_requested_too_early:
                 diff = first_segment_ast - self.now_float
-                if self.should_wait_for_segment_availability:
+                if WAIT_FOR_SEGMENT_AVAILABILITY:
                     self.wait_for_segment_to_become_available(diff)
                 else:
                     response = self.error_response("Request %s before first seg AST. %.1fs too early" %
@@ -372,7 +373,7 @@ class DashProvider(object):
                 response = self.error_response("Request for %s after AET. %.1fs too late" % (cfg.filename, diff))
             
             if (not segment_requested_too_early and not segment_requested_too_late) or \
-                    (segment_requested_too_early and self.should_wait_for_segment_availability):
+                    (segment_requested_too_early and WAIT_FOR_SEGMENT_AVAILABILITY):
                 response = self.process_media_segment(cfg, self.now_float)
                 if len(cfg.multi_url) == 1:  # There is one specific baseURL with losses specified
                     a_var, b_var = cfg.multi_url[0].split("_")
@@ -487,7 +488,7 @@ class DashProvider(object):
             segment_requested_too_early = now_float < seg_ast - cfg.availability_time_offset_in_s
             segment_requested_too_late = now_float > seg_ast + seg_dur + cfg.timeshift_buffer_depth_in_s
             if segment_requested_too_early:
-                if self.should_wait_for_segment_availability:
+                if WAIT_FOR_SEGMENT_AVAILABILITY:
                     self.wait_for_segment_to_become_available(seg_ast - now_float)
                 else:
                     return self.error_response("Request for %s was %.1fs too early" % (seg_name, seg_ast - now_float))
