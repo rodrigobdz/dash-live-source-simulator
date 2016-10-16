@@ -84,7 +84,7 @@ UTC_HEAD_PATH = "dash/time.txt"
 
 PUBLISH_TIME = False
 
-WAIT_FOR_SEGMENT_AVAILABILITY = False
+WAIT_FOR_SEGMENT_AVAILABILITY = True
 
 
 def handle_request(host_name, url_parts, args, vod_conf_dir, content_dir, now=None, req=None, is_https=0):
