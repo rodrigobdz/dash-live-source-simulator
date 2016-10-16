@@ -72,6 +72,8 @@ from . import mpdprocessor
 from .timeformatconversions import make_timestamp, seconds_to_iso_duration
 from .configprocessor import ConfigProcessor
 from xml.etree import ElementTree as ET
+from time import time
+from time import sleep
 
 SECS_IN_DAY = 24 * 3600
 DEFAULT_MINIMUM_UPDATE_PERIOD = "P100Y"
@@ -81,6 +83,8 @@ EXTRA_TIME_AFTER_END_IN_S = 60
 UTC_HEAD_PATH = "dash/time.txt"
 
 PUBLISH_TIME = False
+
+WAIT_FOR_SEGMENT_AVAILABILITY = False
 
 
 def handle_request(host_name, url_parts, args, vod_conf_dir, content_dir, now=None, req=None, is_https=0):
@@ -299,6 +303,17 @@ class DashProvider(object):
         self.req = req
         self.new_tfdt_value = None
 
+    def update_now(self, seconds_to_wait):
+        "Update now timestamp."
+        now = self.now_float + seconds_to_wait
+        self.now_float = now  # float
+        self.now = int(now)
+
+    def wait_for_segment_to_become_available(self, seconds_to_wait):
+        "Sleep until segment becomes available and update now timestamps."
+        sleep(seconds_to_wait)
+        self.update_now(seconds_to_wait)
+
     def handle_request(self):
         "Handle the HTTP request."
         return self.parse_url()
@@ -339,10 +354,17 @@ class DashProvider(object):
                 response = generate_response_with_xlink(response, cfg.ext, cfg.filename, nr_periods_per_hour,
                                                         nr_xlink_periods_per_hour, mpd_input_data['insertAd'])
         elif cfg.ext == ".mp4":
-            if self.now < cfg.availability_start_time_in_s - cfg.init_seg_avail_offset:
+            
+            segment_requested_too_early = self.now < cfg.availability_start_time_in_s - cfg.init_seg_avail_offset
+
+            if segment_requested_too_early:
                 diff = (cfg.availability_start_time_in_s - cfg.init_seg_avail_offset) - self.now_float
-                response = self.error_response("Request for %s was %.1fs too early" % (cfg.filename, diff))
-            else:
+                if WAIT_FOR_SEGMENT_AVAILABILITY:
+                    self.wait_for_segment_to_become_available(diff)
+                else:
+                    response = self.error_response("Request for %s was %.1fs too early" % (cfg.filename, diff))
+            
+            if not segment_requested_too_early or (segment_requested_too_early and WAIT_FOR_SEGMENT_AVAILABILITY):
                 response = self.process_init_segment(cfg)
         elif cfg.ext == ".m4s":
             if cfg.availability_time_offset_in_s == -1:
@@ -351,15 +373,23 @@ class DashProvider(object):
                 first_segment_ast = cfg.availability_start_time_in_s + cfg.seg_duration - \
                                     cfg.availability_time_offset_in_s
 
-            if self.now_float < first_segment_ast:
+            segment_requested_too_early = self.now_float < first_segment_ast
+            segment_requested_too_late = not segment_requested_too_early and (cfg.availability_end_time is not None and \
+                            self.now > cfg.availability_end_time + EXTRA_TIME_AFTER_END_IN_S)
+
+            if segment_requested_too_early:
                 diff = first_segment_ast - self.now_float
-                response = self.error_response("Request %s before first seg AST. %.1fs too early" %
+                if WAIT_FOR_SEGMENT_AVAILABILITY:
+                    self.wait_for_segment_to_become_available(diff)
+                else:
+                    response = self.error_response("Request %s before first seg AST. %.1fs too early" %
                                                (cfg.filename, diff))
-            elif cfg.availability_end_time is not None and \
-                            self.now > cfg.availability_end_time + EXTRA_TIME_AFTER_END_IN_S:
+            elif segment_requested_too_late:
                 diff = self.now_float - (cfg.availability_end_time + EXTRA_TIME_AFTER_END_IN_S)
                 response = self.error_response("Request for %s after AET. %.1fs too late" % (cfg.filename, diff))
-            else:
+            
+            if (not segment_requested_too_early and not segment_requested_too_late) or \
+                    (segment_requested_too_early and WAIT_FOR_SEGMENT_AVAILABILITY):
                 response = self.process_media_segment(cfg, self.now_float)
                 if len(cfg.multi_url) == 1:  # There is one specific baseURL with losses specified
                     a_var, b_var = cfg.multi_url[0].split("_")
@@ -471,9 +501,14 @@ class DashProvider(object):
         seg_ast = seg_time + seg_dur
 
         if cfg.availability_time_offset_in_s != -1:
-            if now_float < seg_ast - cfg.availability_time_offset_in_s:
-                return self.error_response("Request for %s was %.1fs too early" % (seg_name, seg_ast - now_float))
-            if now_float > seg_ast + seg_dur + cfg.timeshift_buffer_depth_in_s:
+            segment_requested_too_early = now_float < seg_ast - cfg.availability_time_offset_in_s
+            segment_requested_too_late = now_float > seg_ast + seg_dur + cfg.timeshift_buffer_depth_in_s
+            if segment_requested_too_early:
+                if WAIT_FOR_SEGMENT_AVAILABILITY:
+                    self.wait_for_segment_to_become_available(seg_ast - now_float)
+                else:
+                    return self.error_response("Request for %s was %.1fs too early" % (seg_name, seg_ast - now_float))
+            if segment_requested_too_late:
                 diff = now_float - (seg_ast + seg_dur + cfg.timeshift_buffer_depth_in_s)
                 return self.error_response("Request for %s was %.1fs too late" % (seg_name, diff))
 
