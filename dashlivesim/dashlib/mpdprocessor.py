@@ -39,7 +39,7 @@ import scte35
 from segtimeline import SegmentTimeLineGenerator
 from dash_namespace import add_ns
 
-SET_BASEURL = True
+SET_BASEURL = False
 
 UTC_TIMING_NTP_SERVER = '1.de.pool.ntp.org'
 UTC_TIMING_SNTP_SERVER = 'time.kfki.hu'
