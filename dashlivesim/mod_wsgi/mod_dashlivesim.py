@@ -85,13 +85,6 @@ def application(environment, start_response):
     if 'HTTP_RANGE' in environment:
         range_line = environment['HTTP_RANGE']
 
-    # Print debug information
-    #print hostname
-    #print url
-    #print path_parts
-    #print ext
-    #print range_line
-
     success = True
     mimetype = get_mime_type(ext)
     status = httplib.OK
@@ -135,7 +128,7 @@ def application(environment, start_response):
     
     if ENABLE_HTTP2:
         # Setup push headers
-        push_headers.add_push_headers(headers, url)    
+        headers = push_headers.add_push_headers(headers, url)    
 
     if status != httplib.NOT_FOUND:
         if range_line:

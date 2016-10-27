@@ -5,15 +5,8 @@
   a list with the next 'k' resources to be pushed is created and 
   added to the current response headers.
 
-  Assumptions:
-    The resources to be pushed are named sequentially.
-
   Requirements:
-    Two different WSGIAliases when using Apache.
-    WSGIAliases are defined in dashlivesim.conf.
-    They must match the ones defined in wsgi_aliases:
-    1. livesim
-    2. livesim_no_push
+    The pushed resources are named sequentially.
 
   Example: 
     For k = 3, meaning that we want the server to push the next 3 resources after n.
@@ -42,9 +35,12 @@
 # Rodrigo Bermudez Schettino
 #
 
-HTTP2_DEBUG = False
+__author__ = 'Rodrigo Bermudez Schettino'
 
 from os.path import splitext
+
+HTTP2_DEBUG = False
+
 
 def add_push_headers(headers, url, k=3):
     """
@@ -61,29 +57,24 @@ def add_push_headers(headers, url, k=3):
         Number of segments to be pushed along with the requested resource
     """
 
-    wsgi_aliases = get_wsgi_aliases()
-
     # Split url into main components
-    processed_url = process_url(url, wsgi_aliases)
+    processed_url = process_url(url)
 
-    # Only push further content if url indicates so
-    if processed_url['wsgi_alias'] == wsgi_aliases['no_push']:
-        return
-    
     try:
         requested_resource_number = int(processed_url['resource_name'])
     except ValueError:
-        # Push different resources at the beginning of a streaming session
-        if processed_url['resource_name'] == 'Manifest':
-            # headers['Link'] = format_header_link( processed_url['base_url'], )
-            return
-        
         # In this case nothing will be pushed
         if HTTP2_DEBUG and not(processed_url['resource_name'] == 'init'):
           log_error(processed_url['resource_name'] + ' cannot be converted to int.')
-        return 
+        return headers 
     
-   
+    
+    # Only push every k segments
+    # Lead segment is the one that comes with pushed content
+    is_lead_segment = requested_resource_number % (k+1)
+    if is_lead_segment != 1:
+      return headers
+
     # Build push headers for the next k segments
     push_headers = ''
     for i in range(k):
@@ -100,8 +91,10 @@ def add_push_headers(headers, url, k=3):
     # Add push headers to the current headers
     headers['Link'] = push_headers
 
+    return headers
 
-def process_url(url, wsgi_aliases):
+
+def process_url(url):
     """
     Process url and return its main parts
       
@@ -128,15 +121,9 @@ def process_url(url, wsgi_aliases):
     path_parts = url.split('/')
 
     processed_url = {}
-    processed_url['wsgi_alias'] = splitext(path_parts[1])[0]
     processed_url['resource_name'] = splitext(path_parts[-1])[0]
     processed_url['base_url'] = '/'.join(path_parts[:-1])+'/'
     processed_url['ext'] = splitext(path_parts[-1])[1]
-
-    # Store base url with no push, to avoid recursively linking resources
-    # with every request.
-    if processed_url['wsgi_alias'] == wsgi_aliases['default']:
-        processed_url['base_url'] = processed_url['base_url'].replace(wsgi_aliases['default'], wsgi_aliases['no_push'])
 
     return processed_url
 
@@ -148,17 +135,6 @@ def format_header_link(base_url, resource):
     return '<' + base_url + resource + '>; rel=preload'
 
 
-def get_wsgi_aliases():
-    """
-    WSGIAliases are stored here as well as in the dashlivesim.conf
-    The WSGIAliases in the conf file must match the ones defined here.
-    """
-    wsgi_aliases = {}
-    wsgi_aliases['default'] = 'livesim_http2'
-    wsgi_aliases['no_push'] = 'livesim_no_push'
-
-    return wsgi_aliases
-
-
 def log_error(msg):
     print 'DLS HTTP2 ERR: ' + msg
+
