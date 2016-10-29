@@ -132,7 +132,7 @@ def format_header_link(base_url, resource):
     """
     Format push resource for headers
     """
-    return '<' + base_url + resource + '>; rel=preload'
+    return '<' + base_url + resource + '>; rel=preload; crossorigin'
 
 
 def log_error(msg):
